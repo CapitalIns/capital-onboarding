@@ -437,40 +437,51 @@ function renderDetail(animate){
 
 var empIn=document.getElementById("emp");empIn.value=S.emp;
 empIn.addEventListener("input",function(){S.emp=empIn.value;save();});
-function summaryText(){var s=allStats();var L=[];
-  L.push("Отчет по обучению — Отдел продаж, Capital Insurance");L.push("Сотрудник: "+(S.emp||"(не указано)"));
+function summaryText(){
+  var s=allStats();var L=[];
+  L.push("Отчет по обучению | Capital Insurance");
+  L.push("Сотрудник: "+(S.emp||"(не указано)"));
   L.push("Дата: "+new Date().toLocaleDateString("ru-RU"));
-  L.push("Прогресс: "+s.pct+"% ("+s.done+" из "+s.total+"), время: "+fmtDur(s.sec));
-  var q=[];PROGRAM.forEach(function(m){L.push("");L.push("["+m.name+"]");m.items.forEach(function(x){
-    if(x.type==="head")return;var o=it(x.id);
-    if(x.type==="check"){L.push("  - "+x.name+": "+(o.done?"готово":"нет"));return;}
-    if(x.type==="quiz"){var res=o.qa!=null?(o.qa===x.ans?"✓ верно":"✗ ошибка"):"не отвечено";L.push("  - "+x.name+" ["+res+"]");return;}
-    L.push("  - "+x.name+": "+STATE_W[o.st]+(o.sec?(", "+fmtDur(o.sec)):""));
-    if(o.q)q.push("  • "+x.name+": "+o.q);});});
-  if(q.length){L.push("");L.push("ВОПРОСЫ ПО ТЕМАМ:");q.forEach(function(x){L.push(x);});}return L.join("\n");}
-function copyText(text){return new Promise(function(res,rej){
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(res).catch(function(){fallback();});}
-  else{fallback();}
-  function fallback(){try{var ta=document.createElement("textarea");ta.value=text;ta.style.cssText="position:fixed;opacity:0;top:0;left:0;width:1px;height:1px";document.body.appendChild(ta);ta.focus();ta.select();document.execCommand("copy");document.body.removeChild(ta);res();}catch(e){rej(e);}}});}
-
-document.getElementById("send").addEventListener("click",function(){
-  var emp=S.emp||"(не указано)";
-  var statusEl=document.getElementById("send-status");
+  L.push("Прогресс: "+s.done+" из "+s.total+" ("+s.pct+"%) | время: "+fmtDur(s.sec));
+  L.push("");
+  L.push("По модулям:");
+  PROGRAM.forEach(function(m){
+    var ms=modStats(m);
+    if(ms.total===0)return;
+    L.push("• "+m.name+" — "+ms.done+"/"+ms.total+(ms.done===ms.total?" ✓":""));
+  });
   var missing=[];
   PROGRAM.forEach(function(m){m.items.forEach(function(x){
     if(x.type==="learn"&&!x.opt&&it(x.id).st<2)missing.push(m.name+": "+x.name);
     else if(x.type==="check"&&!x.opt&&!it(x.id).done)missing.push(m.name+": "+x.name);
-    else if(x.type==="quiz"&&it(x.id).qa==null)missing.push(m.name+": "+x.name);});});
-  var fullText=summaryText();
-  var shortBody="Сотрудник: "+emp+"\nДата: "+new Date().toLocaleDateString("ru-RU")+"\n\nПолный отчет скопирован в буфер обмена. Вставьте его в тело письма (Ctrl+V / Cmd+V).";
-  if(missing.length){shortBody+="\n\n⚠ Не пройдено ("+missing.length+" пункт"+(missing.length===1?"":"ов")+"):\n"+missing.slice(0,15).map(function(x){return"• "+x;}).join("\n")+(missing.length>15?"\n... и ещё "+(missing.length-15):"");}
-  copyText(fullText).then(function(){
-    statusEl.style.display="block";statusEl.style.color="#1a7a42";
-    statusEl.textContent="✓ Отчет скопирован. Откроется окно письма — вставьте текст (Ctrl+V / Cmd+V).";
-  }).catch(function(){
-    statusEl.style.display="block";statusEl.style.color="#b35e00";
-    statusEl.textContent="Не удалось скопировать автоматически. Скопируйте текст из письма вручную.";});
-  setTimeout(function(){window.open("https://mail.google.com/mail/?view=cm&to=info%40ins-israel.co.il&su="+encodeURIComponent("Отчет по обучению — "+emp)+"&body="+encodeURIComponent(shortBody),"_blank");},200);});
+    else if(x.type==="quiz"&&it(x.id).qa==null)missing.push(m.name+": "+x.name);
+  });});
+  if(missing.length){
+    L.push("");
+    L.push("Не закрыто обязательное ("+missing.length+"):");
+    missing.slice(0,15).forEach(function(x){L.push("• "+x);});
+    if(missing.length>15)L.push("... и ещё "+(missing.length-15));
+  }
+  var q=[];
+  PROGRAM.forEach(function(m){m.items.forEach(function(x){var o=it(x.id);if(o.q)q.push("• "+x.name+": "+o.q);});});
+  if(q.length){L.push("");L.push("Вопросы:");q.forEach(function(x){L.push(x);});}
+  return L.join("\n");
+}
+
+document.getElementById("send").addEventListener("click",function(){
+  var emp=S.emp||"(не указано)";
+  var statusEl=document.getElementById("send-status");
+  var body=summaryText();
+  var enc=encodeURIComponent(body);
+  if(enc.length>1900){
+    var lines=body.split("\n");var trimmed=[];var len=0;
+    for(var i=0;i<lines.length;i++){var add=encodeURIComponent(lines[i]+"\n").length;if(len+add>1900){trimmed.push("...");break;}trimmed.push(lines[i]);len+=add;}
+    body=trimmed.join("\n");
+  }
+  window.open("https://mail.google.com/mail/?view=cm&to=info%40ins-israel.co.il&su="+encodeURIComponent("Отчет по обучению — "+emp)+"&body="+encodeURIComponent(body),"_blank");
+  statusEl.style.display="block";statusEl.style.color="#1a7a42";
+  statusEl.textContent="✓ Открывается Gmail. Проверьте письмо и нажмите «Отправить».";
+});
 
 var TICK=15;setInterval(function(){if(document.visibilityState&&document.visibilityState!=="visible")return;var ch=false;
   PROGRAM.forEach(function(m){m.items.forEach(function(x){if(x.type==="learn"){var o=it(x.id);if(o.st===1){o.sec=(o.sec||0)+TICK;ch=true;}}});});
