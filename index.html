@@ -443,6 +443,10 @@ function summaryText(){
   L.push("Сотрудник: "+(S.emp||"(не указано)"));
   L.push("Дата: "+new Date().toLocaleDateString("ru-RU"));
   L.push("Прогресс: "+s.done+" из "+s.total+" ("+s.pct+"%) | время: "+fmtDur(s.sec));
+  var testMod=PROGRAM.filter(function(m){return m.id==="test";})[0];
+  if(testMod){var tDone=0,tTotal=0;testMod.items.forEach(function(x){if(x.type!=="quiz")return;tTotal++;if(it(x.id).qa!=null&&it(x.id).qa===x.ans)tDone++;});
+    L.push("Итоговый тест: "+tDone+" из "+tTotal+(tDone===tTotal?" — все верно":""));
+  }
   L.push("");
   L.push("По модулям:");
   PROGRAM.forEach(function(m){
