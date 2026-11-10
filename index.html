@@ -332,7 +332,7 @@ function renderCheckin(ci){
       var bodyLines=["Привет!","","Прошел(а) модули обучения: "+ci.mods.map(function(mid){var mod=PROGRAM.filter(function(x){return x.id===mid;})[0];return mod?mod.name:mid;}).join(", ")+".","","Готов(а) к "+ci.label+"."];
       if(q.length){bodyLines.push("");bodyLines.push("Вопросы по изученным материалам:");q.forEach(function(x){bodyLines.push(x);});}
       bodyLines.push("");bodyLines.push("Сотрудник: "+emp);
-      window.location.href = "mailto:info@ins-israel.co.il?subject="+encodeURIComponent(ci.label+" — "+emp)+"&body="+encodeURIComponent(bodyLines.join("\n"));});
+      window.open("https://mail.google.com/mail/?view=cm&to=info%40ins-israel.co.il&su="+encodeURIComponent(ci.label+" — "+emp)+"&body="+encodeURIComponent(bodyLines.join("\n")),"_blank");});
     body.appendChild(btn);
   }else{
     var lock=document.createElement("div");lock.className="ci-lock";lock.textContent="Доступно после завершения модулей: "+ci.mods.map(function(mid){var mod=PROGRAM.filter(function(x){return x.id===mid;})[0];return mod?mod.name:mid;}).join(", ");
@@ -470,7 +470,7 @@ document.getElementById("send").addEventListener("click",function(){
   }).catch(function(){
     statusEl.style.display="block";statusEl.style.color="#b35e00";
     statusEl.textContent="Не удалось скопировать автоматически. Скопируйте текст из письма вручную.";});
-  setTimeout(function(){window.location.href = "mailto:info@ins-israel.co.il?subject="+encodeURIComponent("Отчет по обучению — "+emp)+"&body="+encodeURIComponent(shortBody);},200);});
+  setTimeout(function(){window.open("https://mail.google.com/mail/?view=cm&to=info%40ins-israel.co.il&su="+encodeURIComponent("Отчет по обучению — "+emp)+"&body="+encodeURIComponent(shortBody),"_blank");},200);});
 
 var TICK=15;setInterval(function(){if(document.visibilityState&&document.visibilityState!=="visible")return;var ch=false;
   PROGRAM.forEach(function(m){m.items.forEach(function(x){if(x.type==="learn"){var o=it(x.id);if(o.st===1){o.sec=(o.sec||0)+TICK;ch=true;}}});});
